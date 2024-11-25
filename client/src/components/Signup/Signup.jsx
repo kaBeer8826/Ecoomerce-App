@@ -3,14 +3,68 @@ import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { RxAvatar } from "react-icons/rx";
 import styles from "../../styles/styles";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import { server } from "../../server";
+import { FaSpinner } from "react-icons/fa";
+import { toast } from "react-toastify";
+
 function Signup() {
-  const handleSubmit = () => {};
-  const handleFileInputChange = () => {};
-  const [name, setName] = useState();
-  const [email, setEmail] = useState();
-  const [password, setPassword] = useState();
-  const [visible, setVisible] = useState();
-  const [avatar, setAvatar] = useState();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [visible, setVisible] = useState(false);
+  const [avatar, setAvatar] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const config = {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  };
+
+  const handleFileInputChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setAvatar(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!name || !email || !password || !avatar) {
+      toast.error("All fields are required!");
+      return;
+    }
+
+    const newForm = new FormData();
+    newForm.append("file", avatar);
+    newForm.append("name", name);
+    newForm.append("email", email);
+    newForm.append("password", password);
+
+    setIsUploading(true);
+
+    try {
+      await axios
+        .post(`${server}/user/create-user`, newForm, config)
+        .then((res) => {
+          toast(res.data.message);
+        });
+
+      setName("");
+      setEmail("");
+      setPassword("");
+      setAvatar(null);
+      setAvatarPreview(null);
+    } catch (error) {
+      toast.error(error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -23,7 +77,7 @@ function Signup() {
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label
-                htmlFor="email"
+                htmlFor="name"
                 className="block text-sm font-medium text-gray-700"
               >
                 Full Name
@@ -31,8 +85,7 @@ function Signup() {
               <div className="mt-1">
                 <input
                   type="text"
-                  name="text"
-                  autoComplete="name"
+                  name="name"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -51,7 +104,6 @@ function Signup() {
                 <input
                   type="email"
                   name="email"
-                  autoComplete="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -70,7 +122,6 @@ function Signup() {
                 <input
                   type={visible ? "text" : "password"}
                   name="password"
-                  autoComplete="current-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -95,22 +146,24 @@ function Signup() {
               <label
                 htmlFor="avatar"
                 className="block text-sm font-medium text-gray-700"
-              ></label>
+              >
+                Avatar
+              </label>
               <div className="mt-2 flex items-center">
-                <span className="inline-block h-8 w-8 rounded-full overflow-hidden">
-                  {avatar ? (
+                <span className="inline-block h-16 w-16 rounded-full overflow-hidden">
+                  {avatarPreview ? (
                     <img
-                      src={avatar}
-                      alt="avatar"
+                      src={avatarPreview}
+                      alt="Avatar Preview"
                       className="h-full w-full object-cover rounded-full"
                     />
                   ) : (
-                    <RxAvatar className="h-8 w-8" />
+                    <RxAvatar className="h-16 w-16 text-gray-400" />
                   )}
                 </span>
                 <label
                   htmlFor="file-input"
-                  className="ml-5  flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  className="ml-5 flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                 >
                   <span>Upload a file</span>
                   <input
@@ -127,11 +180,20 @@ function Signup() {
             <div>
               <button
                 type="submit"
-                className="group relative w-full h-[40px] flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                disabled={isUploading}
+                className={`group relative w-full h-[40px] flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
+                  isUploading
+                    ? "bg-blue-300 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700"
+                }`}
               >
-                Submit
+                {isUploading ? (
+                  <FaSpinner className="animate-spin text-white" />
+                ) : (
+                  "Submit"
+                )}
               </button>
-              <div className={`${styles.noramlFlex} w-full`}>
+              <div className={`${styles.noramlFlex} w-full mt-4`}>
                 <h4>Already have an account?</h4>
                 <Link to="/login" className="text-blue-600 pl-2">
                   Sign In

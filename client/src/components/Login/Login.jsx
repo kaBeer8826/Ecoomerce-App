@@ -1,12 +1,38 @@
 import React, { useState } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import styles from "../../styles/styles";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { server } from "../../server";
+import { toast } from "react-toastify";
 function Login() {
-  const handleSubmit = () => {};
   const [email, setEmail] = useState("");
   const [visible, setVisible] = useState(false);
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await axios
+      .post(
+        `${server}/user/login-user`,
+        {
+          email,
+          password,
+        },
+        {
+          withCredentials: true,
+        }
+      )
+      .then((res) => {
+        toast.success("Login SuccessFul");
+        navigate("/");
+        window.location.reload(true);
+      })
+      .catch((err) => {
+       toast.error(err)
+      });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-start py-12 sm:px-6 lg:px-8">
       <div className=" sm:mx-auto sm:w-full sm:max-w-md">
